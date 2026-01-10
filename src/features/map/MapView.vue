@@ -75,4 +75,33 @@ defineExpose({
   width: 100%;
   z-index: 0;
 }
+
+/* Style edit handles to be circular */
+:deep(.leaflet-editing-icon) {
+  border-radius: 50% !important;
+  width: 12px !important;
+  height: 12px !important;
+  margin-left: -6px !important;
+  margin-top: -6px !important;
+  border: 2px solid #fff !important;
+  background-color: #3b82f6 !important;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2) !important;
+}
+
+:deep(.leaflet-editing-icon:hover) {
+  background-color: #2563eb !important;
+  width: 14px !important;
+  height: 14px !important;
+  margin-left: -7px !important;
+  margin-top: -7px !important;
+}
+
+/* Style middle marker (for adding vertices) */
+:deep(.leaflet-marker-icon.leaflet-div-icon.leaflet-editing-icon.leaflet-touch-icon) {
+  opacity: 0.6;
+}
+
+:deep(.leaflet-marker-icon.leaflet-div-icon.leaflet-editing-icon.leaflet-touch-icon:hover) {
+  opacity: 1;
+}
 </style>
