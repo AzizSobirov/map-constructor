@@ -1,0 +1,76 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          69.2,
+          41.3
+        ]
+      },
+      "properties": {
+        "name": "Tashkent Center",
+        "description": "Capital of Uzbekistan",
+        "color": "#3b82f6"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            69.1,
+            41.2
+          ],
+          [
+            69.3,
+            41.4
+          ]
+        ]
+      },
+      "properties": {
+        "name": "Sample Road",
+        "description": "A test road",
+        "color": "#ef4444"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              69.0,
+              41.0
+            ],
+            [
+              69.4,
+              41.0
+            ],
+            [
+              69.4,
+              41.6
+            ],
+            [
+              69.0,
+              41.6
+            ],
+            [
+              69.0,
+              41.0
+            ]
+          ]
+        ]
+      },
+      "properties": {
+        "name": "Sample Area",
+        "description": "A test polygon",
+        "color": "#10b981"
+      }
+    }
+  ]
+}
