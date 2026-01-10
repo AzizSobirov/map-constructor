@@ -8,6 +8,7 @@ export interface UseMapOptions {
   config?: Partial<MapConfig>
   onFeatureClick?: (feature: GeoJSONFeature, layer: L.Layer) => void
   onFeatureHover?: (feature: GeoJSONFeature | null) => void
+  onMapClick?: () => void
 }
 
 export function useMap(containerRef: Ref<HTMLElement | null>, options: UseMapOptions = {}) {
@@ -48,6 +49,13 @@ export function useMap(containerRef: Ref<HTMLElement | null>, options: UseMapOpt
         '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
       maxZoom: config.maxZoom || MAX_ZOOM,
     }).addTo(map.value as L.Map)
+
+    // Add click handler for map to detect clicks outside features
+    if (options.onMapClick) {
+      map.value.on('click', () => {
+        options.onMapClick?.()
+      })
+    }
 
     // Initialize GeoJSON layer
     initGeoJSONLayer()
@@ -96,7 +104,8 @@ export function useMap(containerRef: Ref<HTMLElement | null>, options: UseMapOpt
       },
       onEachFeature: (feature, layer) => {
         // Click event
-        layer.on('click', () => {
+        layer.on('click', (e: L.LeafletMouseEvent) => {
+          L.DomEvent.stopPropagation(e)
           if (options.onFeatureClick) {
             options.onFeatureClick(feature as GeoJSONFeature, layer)
           }

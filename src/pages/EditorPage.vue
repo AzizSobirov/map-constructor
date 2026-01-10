@@ -201,6 +201,13 @@ const handleFeatureHover = (feature: GeoJSONFeature | null) => {
   hoveredFeature.value = feature
 }
 
+const handleMapClick = () => {
+  if (selectedFeature.value) {
+    selectedFeature.value = null
+    mapRef.value?.setSelectedFeature(null)
+  }
+}
+
 const handleSelectFeature = (feature: GeoJSONFeature) => {
   selectedFeature.value = feature
 
@@ -214,6 +221,18 @@ const handleHoverFeature = (featureId: string | null) => {
 
 const handleUpdateFeature = (updatedFeature: GeoJSONFeature) => {
   mapRef.value?.updateFeature(updatedFeature.properties.id, updatedFeature)
+}
+
+const handleUpdateAllFeatures = (properties: Partial<any>) => {
+  featureCollection.value.features.forEach((feature) => {
+    mapRef.value?.updateFeature(feature.properties.id, {
+      ...feature,
+      properties: {
+        ...feature.properties,
+        ...properties,
+      },
+    })
+  })
 }
 
 const handleDeleteFeature = (featureId: string) => {
@@ -331,6 +350,7 @@ useKeyboardShortcuts({
           @feature-click="handleFeatureClick"
           @feature-hover="handleFeatureHover"
           @map-ready="onMapReady"
+          :on-map-click="handleMapClick"
         />
       </div>
     </FeatureContextMenu>
@@ -376,6 +396,7 @@ useKeyboardShortcuts({
     <!-- Properties Editor -->
     <PropertiesEditor
       :feature="selectedFeature"
+      :features="featureCollection"
       :key="selectedFeature?.properties.id"
       @update:open="
         (val) => {
@@ -386,6 +407,7 @@ useKeyboardShortcuts({
         }
       "
       @update:feature="handleUpdateFeature"
+      @update:all-features="handleUpdateAllFeatures"
       @delete="handleDeleteFeature"
     />
 

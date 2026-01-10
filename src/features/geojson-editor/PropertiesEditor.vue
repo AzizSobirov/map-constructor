@@ -6,10 +6,11 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { toast } from 'vue-sonner'
-import type { GeoJSONFeature, FeatureProperties } from '@/shared/types'
+import type { GeoJSONFeature, FeatureProperties, GeoJSONFeatureCollection } from '@/shared/types'
 
 interface PropertiesEditorProps {
   feature: GeoJSONFeature | null
+  features?: GeoJSONFeatureCollection
 }
 
 const props = defineProps<PropertiesEditorProps>()
@@ -17,6 +18,7 @@ const props = defineProps<PropertiesEditorProps>()
 const emit = defineEmits<{
   'update:open': [value: boolean]
   'update:feature': [feature: GeoJSONFeature]
+  'update:all-features': [properties: Partial<FeatureProperties>]
   delete: [featureId: string]
 }>()
 
@@ -84,11 +86,19 @@ const updateProperty = (key: keyof FeatureProperties, value: any) => {
 }
 
 const debouncedUpdateFillColor = useDebounceFn((color: string) => {
-  updateProperty('fillColor', color)
+  if (props.feature) {
+    updateProperty('fillColor', color)
+  } else {
+    emit('update:all-features', { fillColor: color })
+  }
 }, 300)
 
 const debouncedUpdateLineColor = useDebounceFn((color: string) => {
-  updateProperty('lineColor', color)
+  if (props.feature) {
+    updateProperty('lineColor', color)
+  } else {
+    emit('update:all-features', { lineColor: color })
+  }
 }, 300)
 
 const updateFillColor = (color: string | number) => {
@@ -99,7 +109,11 @@ const updateFillColor = (color: string | number) => {
 const updateFillOpacity = (opacity: string | number) => {
   const numOpacity = typeof opacity === 'string' ? parseFloat(opacity) : opacity
   fillOpacity.value = numOpacity
-  updateProperty('fillOpacity', numOpacity)
+  if (props.feature) {
+    updateProperty('fillOpacity', numOpacity)
+  } else {
+    emit('update:all-features', { fillOpacity: numOpacity })
+  }
 }
 
 const updateLineColor = (color: string | number) => {
@@ -110,7 +124,11 @@ const updateLineColor = (color: string | number) => {
 const updateStrokeOpacity = (opacity: string | number) => {
   const numOpacity = typeof opacity === 'string' ? parseFloat(opacity) : opacity
   strokeOpacity.value = numOpacity
-  updateProperty('strokeOpacity', numOpacity)
+  if (props.feature) {
+    updateProperty('strokeOpacity', numOpacity)
+  } else {
+    emit('update:all-features', { strokeOpacity: numOpacity })
+  }
 }
 
 const updateCoordinates = () => {
@@ -271,9 +289,104 @@ const copyId = async () => {
 
     <!-- Content -->
     <div v-if="!collapsed" class="max-h-[calc(100vh-65px)] overflow-y-auto">
-      <div v-if="!feature" class="p-6 text-center">
+      <div v-if="!feature && (!features || features.features.length === 0)" class="p-6 text-center">
         <p class="text-sm font-medium text-gray-500">No properties</p>
         <p class="mt-1 text-xs text-gray-400">Start drawing</p>
+      </div>
+
+      <!-- Bulk edit mode when no feature selected but features exist -->
+      <div
+        v-else-if="!feature && features && features.features.length > 0"
+        class="divide-y divide-gray-100"
+      >
+        <div class="space-y-4 p-4">
+          <div class="mb-4 rounded-md bg-blue-50 p-3">
+            <p class="text-xs font-medium text-blue-900">Bulk Edit Mode</p>
+            <p class="mt-1 text-xs text-blue-700">
+              Changes will apply to all {{ features.features.length }} features
+            </p>
+          </div>
+
+          <!-- Fill Color -->
+          <div class="space-y-1.5">
+            <Label for="fill-color" class="text-xs font-medium text-gray-700">Fill Color</Label>
+            <div class="flex items-center gap-2">
+              <label
+                for="fill-color-input"
+                class="relative h-8 w-8 cursor-pointer rounded-md p-0.5 border border-gray-300 shrink-0"
+              >
+                <div class="size-full rounded-sm" :style="{ backgroundColor: fillColor }"></div>
+
+                <input
+                  id="fill-color-input"
+                  type="color"
+                  :value="fillColor"
+                  @input="updateFillColor(($event.target as HTMLInputElement).value)"
+                  class="hidden"
+                />
+              </label>
+
+              <Input
+                id="fill-color"
+                :model-value="fillColor.toUpperCase()"
+                @update:model-value="updateFillColor"
+                placeholder="#4287F5"
+                class="h-8 flex-1 text-sm font-mono uppercase"
+              />
+
+              <Input
+                id="fill-opacity"
+                :model-value="fillOpacity"
+                @update:model-value="updateFillOpacity"
+                type="number"
+                min="0"
+                max="100"
+                class="h-8 w-16 text-sm"
+                placeholder="Opacity"
+              />
+            </div>
+          </div>
+
+          <!-- Line Color -->
+          <div class="space-y-1.5">
+            <Label for="line-color" class="text-xs font-medium text-gray-700">Line Color</Label>
+            <div class="flex items-center gap-2">
+              <label
+                for="line-color-input"
+                class="relative h-8 w-8 cursor-pointer rounded-md p-0.5 border border-gray-300 shrink-0"
+              >
+                <div class="size-full rounded-sm" :style="{ backgroundColor: lineColor }"></div>
+
+                <input
+                  id="line-color-input"
+                  type="color"
+                  :value="lineColor"
+                  @input="updateLineColor(($event.target as HTMLInputElement).value)"
+                  class="hidden"
+                />
+              </label>
+
+              <Input
+                id="line-color"
+                :model-value="lineColor.toUpperCase()"
+                @update:model-value="updateLineColor"
+                placeholder="#4287F5"
+                class="h-8 flex-1 text-sm font-mono uppercase"
+              />
+
+              <Input
+                id="stroke-opacity"
+                :model-value="strokeOpacity"
+                @update:model-value="updateStrokeOpacity"
+                type="number"
+                min="0"
+                max="100"
+                class="h-8 w-16 text-sm"
+                placeholder="Opacity"
+              />
+            </div>
+          </div>
+        </div>
       </div>
 
       <div v-else class="divide-y divide-gray-100">

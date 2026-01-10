@@ -6,6 +6,7 @@ import type { GeoJSONFeature, GeoJSONFeatureCollection } from '@/shared/types'
 interface MapViewProps {
   onFeatureClick?: (feature: GeoJSONFeature) => void
   onFeatureHover?: (feature: GeoJSONFeature | null) => void
+  onMapClick?: () => void
 }
 
 const props = defineProps<MapViewProps>()
@@ -40,6 +41,9 @@ const {
   onFeatureHover: (feature) => {
     emit('featureHover', feature)
     props.onFeatureHover?.(feature)
+  },
+  onMapClick: () => {
+    props.onMapClick?.()
   },
 })
 
