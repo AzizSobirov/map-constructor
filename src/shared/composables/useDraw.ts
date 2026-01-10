@@ -171,6 +171,13 @@ export function useDraw(map: L.Map | null, options: UseDrawOptions = {}) {
     // Initialize the edit handler with this feature group
     editHandler = new L.EditToolbar.Edit(map as any, {
       featureGroup: editGroup,
+      selectedPathOptions: {
+        dashArray: '10, 10',
+        fill: true,
+        fillColor: '#fe57a1',
+        fillOpacity: 0.1,
+        maintainColor: false,
+      } as any,
     })
 
     // Enable editing

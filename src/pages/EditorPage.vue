@@ -197,6 +197,11 @@ const handleZoomCenter = () => {
 
 // Feature handlers
 const handleFeatureClick = (feature: GeoJSONFeature) => {
+  // Don't select features while in draw mode
+  if (drawMode.value) {
+    return
+  }
+
   selectedFeature.value = feature
   contextMenuFeature.value = feature
 

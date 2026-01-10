@@ -105,9 +105,11 @@ export function useMap(containerRef: Ref<HTMLElement | null>, options: UseMapOpt
       onEachFeature: (feature, layer) => {
         // Click event
         layer.on('click', (e: L.LeafletMouseEvent) => {
-          L.DomEvent.stopPropagation(e)
           if (options.onFeatureClick) {
+            // Call the handler, but let it decide whether to stop propagation
             options.onFeatureClick(feature as GeoJSONFeature, layer)
+            // Stop propagation to prevent map click only if handler was called
+            L.DomEvent.stopPropagation(e)
           }
         })
 
