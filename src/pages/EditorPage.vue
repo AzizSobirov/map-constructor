@@ -16,6 +16,7 @@ const hoveredFeatureId = ref<string | null>(null)
 const drawMode = ref<'point' | 'line' | 'polygon' | null>(null)
 const contextMenuFeature = ref<GeoJSONFeature | null>(null)
 const editMode = ref(false)
+const originalFeatureBeforeEdit = ref<GeoJSONFeature | null>(null)
 
 // Get computed feature collection from map
 const featureCollection = computed<GeoJSONFeatureCollection>(() => {
@@ -78,6 +79,9 @@ const handleClearAll = () => {
 const handleEditFeature = () => {
   if (!selectedFeature.value) return
 
+  // Store original feature state before editing
+  originalFeatureBeforeEdit.value = JSON.parse(JSON.stringify(selectedFeature.value))
+
   editMode.value = true
 
   // Enable editing on the selected feature's layer
@@ -102,13 +106,27 @@ const handleSaveEdit = () => {
     mapRef.value?.updateFeature(selectedFeature.value.properties.id, updatedFeature)
     selectedFeature.value = updatedFeature
   }
-
-  drawComposable?.disableEdit()
+  originalFeatureBeforeEdit.value = null
   editMode.value = false
 }
 
 const handleCancelEdit = () => {
   drawComposable?.disableEdit()
+  editMode.value = false
+
+  // Restore original feature state if it exists
+  if (originalFeatureBeforeEdit.value && selectedFeature.value) {
+    mapRef.value?.updateFeature(
+      selectedFeature.value.properties.id,
+      originalFeatureBeforeEdit.value,
+    )
+    selectedFeature.value = originalFeatureBeforeEdit.value
+    originalFeatureBeforeEdit.value = null
+    editMode.value = false
+    return
+  }
+
+  originalFeatureBeforeEdit.value = null
   editMode.value = false
   selectedFeature.value = null
   mapRef.value?.setSelectedFeature(null)
