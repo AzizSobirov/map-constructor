@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
 import { useDebounceFn } from '@vueuse/core'
-import { X, Eye, EyeOff, Trash2, TableProperties, ChevronDown } from 'lucide-vue-next'
+import { X, Eye, EyeOff, Trash2, TableProperties, ChevronDown, Copy, Check } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { toast } from 'vue-sonner'
 import type { GeoJSONFeature, FeatureProperties } from '@/shared/types'
-import { DEFAULT_FEATURE_COLORS } from '@/shared/utils/constants'
 
 interface PropertiesEditorProps {
   feature: GeoJSONFeature | null
@@ -32,6 +32,7 @@ const fillVisible = ref(true)
 const strokeVisible = ref(true)
 const editingCoordinates = ref(false)
 const coordinatesText = ref('')
+const copiedId = ref(false)
 
 watch(
   () => props.feature,
@@ -207,8 +208,24 @@ const handleDelete = () => {
 const close = () => {
   emit('update:open', false)
 }
+
 const toggleCollapse = () => {
   collapsed.value = !collapsed.value
+}
+
+const copyId = async () => {
+  if (!props.feature) return
+
+  try {
+    await navigator.clipboard.writeText(props.feature.properties.id)
+    copiedId.value = true
+    toast.success('ID copied to clipboard')
+    setTimeout(() => {
+      copiedId.value = false
+    }, 2000)
+  } catch (error) {
+    toast.error('Failed to copy ID')
+  }
 }
 </script>
 
@@ -254,119 +271,80 @@ const toggleCollapse = () => {
             />
           </div>
 
-          <!-- Description -->
-          <div class="space-y-1.5">
-            <Label for="feature-description" class="text-xs font-medium text-gray-700"
-              >Description</Label
-            >
-            <textarea
-              id="feature-description"
-              :value="localProperties?.description"
-              @input="updateProperty('description', ($event.target as HTMLTextAreaElement).value)"
-              class="flex w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm ring-offset-background placeholder:text-gray-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 disabled:cursor-not-allowed disabled:opacity-50"
-              style="min-height: 60px"
-              placeholder="Feature description"
-            />
-          </div>
-
           <!-- Fill Color -->
-          <div class="space-y-2">
-            <Label class="text-sm font-semibold text-gray-900">Fill Color</Label>
+          <div class="space-y-1.5">
+            <Label for="fill-color" class="text-xs font-medium text-gray-700">Fill Color</Label>
             <div class="flex items-center gap-2">
               <label
                 for="fill-color-input"
-                class="h-10 w-10 cursor-pointer rounded border border-gray-300"
-                :style="{ backgroundColor: fillColor, opacity: fillOpacity / 100 }"
-              />
-              <input
-                id="fill-color-input"
-                type="color"
-                :value="fillColor"
-                @input="updateFillColor(($event.target as HTMLInputElement).value)"
-                class="hidden"
-              />
+                class="relative h-8 w-8 cursor-pointer rounded-md p-0.5 border border-gray-300 shrink-0"
+              >
+                <div class="size-full rounded-sm" :style="{ backgroundColor: fillColor }"></div>
+
+                <input
+                  id="fill-color-input"
+                  type="color"
+                  :value="fillColor"
+                  @input="updateFillColor(($event.target as HTMLInputElement).value)"
+                  class="hidden"
+                />
+              </label>
+
               <Input
+                id="fill-color"
                 :model-value="fillColor.toUpperCase()"
                 @update:model-value="updateFillColor"
-                placeholder="4287F5"
-                class="h-10 flex-1 text-sm font-mono uppercase"
+                placeholder="#4287F5"
+                class="h-8 flex-1 text-sm font-mono uppercase"
               />
+
               <Input
+                id="fill-opacity"
                 v-model.number="fillOpacity"
                 type="number"
                 min="0"
                 max="100"
-                class="h-10 w-20 text-sm"
+                class="h-8 w-16 text-sm"
+                placeholder="Opacity"
               />
-              <Button
-                variant="ghost"
-                size="icon"
-                class="h-10 w-10"
-                @click="fillVisible = !fillVisible"
-              >
-                <Eye v-if="fillVisible" class="h-5 w-5 text-gray-600" />
-                <EyeOff v-else class="h-5 w-5 text-gray-400" />
-              </Button>
             </div>
           </div>
 
           <!-- Line Color -->
-          <div class="space-y-2">
-            <Label class="text-sm font-semibold text-gray-900">Line Color</Label>
+          <div class="space-y-1.5">
+            <Label for="line-color" class="text-xs font-medium text-gray-700">Line Color</Label>
             <div class="flex items-center gap-2">
               <label
                 for="line-color-input"
-                class="h-10 w-10 cursor-pointer rounded border border-gray-300"
-                :style="{ backgroundColor: lineColor, opacity: strokeOpacity / 100 }"
-              />
-              <input
-                id="line-color-input"
-                type="color"
-                :value="lineColor"
-                @input="updateLineColor(($event.target as HTMLInputElement).value)"
-                class="hidden"
-              />
+                class="relative h-8 w-8 cursor-pointer rounded-md p-0.5 border border-gray-300 shrink-0"
+              >
+                <div class="size-full rounded-sm" :style="{ backgroundColor: lineColor }"></div>
+
+                <input
+                  id="line-color-input"
+                  type="color"
+                  :value="lineColor"
+                  @input="updateLineColor(($event.target as HTMLInputElement).value)"
+                  class="hidden"
+                />
+              </label>
+
               <Input
+                id="line-color"
                 :model-value="lineColor.toUpperCase()"
                 @update:model-value="updateLineColor"
-                placeholder="4287F5"
-                class="h-10 flex-1 text-sm font-mono uppercase"
+                placeholder="#4287F5"
+                class="h-8 flex-1 text-sm font-mono uppercase"
               />
+
               <Input
+                id="stroke-opacity"
                 v-model.number="strokeOpacity"
                 type="number"
                 min="0"
                 max="100"
-                class="h-10 w-20 text-sm"
-              />
-              <Button
-                variant="ghost"
-                size="icon"
-                class="h-10 w-10"
-                @click="strokeVisible = !strokeVisible"
-              >
-                <Eye v-if="strokeVisible" class="h-5 w-5 text-gray-600" />
-                <EyeOff v-else class="h-5 w-5 text-gray-400" />
-              </Button>
-            </div>
-          </div>
-
-          <!-- Color presets -->
-          <div class="space-y-1.5">
-            <Label class="text-xs font-medium text-gray-700">Color Presets</Label>
-            <div class="flex flex-wrap gap-1.5">
-              <button
-                v-for="color in DEFAULT_FEATURE_COLORS"
-                :key="color"
-                :style="{ backgroundColor: color }"
-                class="h-6 w-6 rounded border transition-transform hover:scale-110"
-                :class="fillColor === color ? 'border-2 border-gray-900' : 'border border-gray-300'"
-                @click="
-                  () => {
-                    updateFillColor(color)
-                    updateLineColor(color)
-                  }
-                "
+                class="h-8 w-16 text-sm"
+                placeholder="Opacity"
               />
             </div>
           </div>
@@ -418,12 +396,24 @@ const toggleCollapse = () => {
           <!-- ID (read-only) -->
           <div class="space-y-1.5">
             <Label for="feature-id" class="text-xs font-medium text-gray-700">ID</Label>
-            <Input
-              id="feature-id"
-              :model-value="localProperties?.id"
-              disabled
-              class="h-8 font-mono text-xs"
-            />
+            <div class="flex gap-2">
+              <Input
+                id="feature-id"
+                :model-value="localProperties?.id"
+                disabled
+                class="h-8 flex-1 font-mono text-xs"
+              />
+              <Button
+                variant="ghost"
+                size="icon"
+                class="h-8 w-8 shrink-0"
+                @click="copyId"
+                title="Copy ID"
+              >
+                <Check v-if="copiedId" class="h-4 w-4 text-green-600" />
+                <Copy v-else class="h-4 w-4 text-gray-600" />
+              </Button>
+            </div>
           </div>
 
           <!-- Custom Properties -->
