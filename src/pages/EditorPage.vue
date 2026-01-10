@@ -7,12 +7,14 @@ import PropertiesEditor from '@/features/geojson-editor/PropertiesEditor.vue'
 import LayersList from '@/features/geojson-editor/LayersList.vue'
 import ZoomControls from '@/features/map/ZoomControls.vue'
 import FeatureContextMenu from '@/features/map/FeatureContextMenu.vue'
+import MouseFollower from '@/features/map/MouseFollower.vue'
 import { useDraw, useKeyboardShortcuts } from '@/shared/composables'
 import type { GeoJSONFeature, GeoJSONFeatureCollection } from '@/shared/types'
 
 const mapRef = ref<InstanceType<typeof MapView> | null>(null)
 const selectedFeature = ref<GeoJSONFeature | null>(null)
 const hoveredFeatureId = ref<string | null>(null)
+const hoveredFeature = ref<GeoJSONFeature | null>(null)
 const drawMode = ref<'point' | 'line' | 'polygon' | null>(null)
 const contextMenuFeature = ref<GeoJSONFeature | null>(null)
 const editMode = ref(false)
@@ -164,6 +166,7 @@ const handleFeatureClick = (feature: GeoJSONFeature) => {
 
 const handleFeatureHover = (feature: GeoJSONFeature | null) => {
   hoveredFeatureId.value = feature?.properties.id || null
+  hoveredFeature.value = feature
 }
 
 const handleSelectFeature = (feature: GeoJSONFeature) => {
@@ -350,5 +353,8 @@ useKeyboardShortcuts({
       @update:feature="handleUpdateFeature"
       @delete="handleDeleteFeature"
     />
+
+    <!-- Mouse Follower -->
+    <MouseFollower :hovered-feature="hoveredFeature" />
   </div>
 </template>
