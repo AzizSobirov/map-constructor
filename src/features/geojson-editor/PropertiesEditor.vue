@@ -38,9 +38,12 @@ watch(
   () => props.feature,
   (newFeature) => {
     if (newFeature) {
+      collapsed.value = false
       localProperties.value = { ...newFeature.properties }
-      fillColor.value = newFeature.properties.color || '#4287F5'
-      lineColor.value = newFeature.properties.color || '#4287F5'
+      fillColor.value = newFeature.properties.fillColor || newFeature.properties.color || '#4287F5'
+      lineColor.value = newFeature.properties.lineColor || newFeature.properties.color || '#4287F5'
+      fillOpacity.value = newFeature.properties.fillOpacity ?? 39
+      strokeOpacity.value = newFeature.properties.strokeOpacity ?? 100
 
       // Set coordinates text
       if (newFeature.geometry.type === 'Point') {
@@ -80,18 +83,34 @@ const updateProperty = (key: keyof FeatureProperties, value: any) => {
   })
 }
 
-const debouncedUpdateColor = useDebounceFn((color: string) => {
-  updateProperty('color', color)
+const debouncedUpdateFillColor = useDebounceFn((color: string) => {
+  updateProperty('fillColor', color)
+}, 300)
+
+const debouncedUpdateLineColor = useDebounceFn((color: string) => {
+  updateProperty('lineColor', color)
 }, 300)
 
 const updateFillColor = (color: string | number) => {
   fillColor.value = String(color)
-  debouncedUpdateColor(String(color))
+  debouncedUpdateFillColor(String(color))
+}
+
+const updateFillOpacity = (opacity: string | number) => {
+  const numOpacity = typeof opacity === 'string' ? parseFloat(opacity) : opacity
+  fillOpacity.value = numOpacity
+  updateProperty('fillOpacity', numOpacity)
 }
 
 const updateLineColor = (color: string | number) => {
   lineColor.value = String(color)
-  debouncedUpdateColor(String(color))
+  debouncedUpdateLineColor(String(color))
+}
+
+const updateStrokeOpacity = (opacity: string | number) => {
+  const numOpacity = typeof opacity === 'string' ? parseFloat(opacity) : opacity
+  strokeOpacity.value = numOpacity
+  updateProperty('strokeOpacity', numOpacity)
 }
 
 const updateCoordinates = () => {
@@ -300,7 +319,8 @@ const copyId = async () => {
 
               <Input
                 id="fill-opacity"
-                v-model.number="fillOpacity"
+                :model-value="fillOpacity"
+                @update:model-value="updateFillOpacity"
                 type="number"
                 min="0"
                 max="100"
@@ -339,7 +359,8 @@ const copyId = async () => {
 
               <Input
                 id="stroke-opacity"
-                v-model.number="strokeOpacity"
+                :model-value="strokeOpacity"
+                @update:model-value="updateStrokeOpacity"
                 type="number"
                 min="0"
                 max="100"

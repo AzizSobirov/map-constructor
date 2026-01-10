@@ -64,26 +64,34 @@ export function useMap(containerRef: Ref<HTMLElement | null>, options: UseMapOpt
         const isSelected = feature?.properties?.id === selectedFeatureId.value
         const isHovered = feature?.properties?.id === hoveredFeatureId.value
         const hasSelection = selectedFeatureId.value !== null
+        const fillOpacity = feature?.properties?.fillOpacity ?? 39
+        const strokeOpacity = feature?.properties?.strokeOpacity ?? 100
+        const lineColor = feature?.properties?.lineColor || feature?.properties?.color || '#3b82f6'
+        const fillColor = feature?.properties?.fillColor || feature?.properties?.color || '#3b82f6'
 
         return {
-          color: feature?.properties?.color || '#3b82f6',
+          color: lineColor,
+          fillColor: fillColor,
           weight: isSelected || isHovered ? 4 : 3,
-          opacity: 1,
-          fillOpacity: hasSelection && !isSelected ? 0.15 : isSelected || isHovered ? 0.5 : 0.4,
+          opacity: hasSelection && !isSelected ? 0.5 : strokeOpacity / 100,
+          fillOpacity: hasSelection && !isSelected ? 0.5 : fillOpacity / 100,
         }
       },
       pointToLayer: (feature, latlng) => {
         const isSelected = feature?.properties?.id === selectedFeatureId.value
         const isHovered = feature?.properties?.id === hoveredFeatureId.value
         const hasSelection = selectedFeatureId.value !== null
+        const fillOpacity = feature?.properties?.fillOpacity ?? 39
+        const strokeOpacity = feature?.properties?.strokeOpacity ?? 100
+        const fillColor = feature?.properties?.fillColor || feature?.properties?.color || '#3b82f6'
 
         return L.circleMarker(latlng, {
           radius: isSelected || isHovered ? 10 : 8,
-          fillColor: feature.properties?.color || '#3b82f6',
+          fillColor: fillColor,
           color: '#fff',
           weight: 2,
-          opacity: 1,
-          fillOpacity: hasSelection && !isSelected ? 0.35 : isSelected || isHovered ? 1 : 0.8,
+          opacity: hasSelection && !isSelected ? 0.5 : strokeOpacity / 100,
+          fillOpacity: hasSelection && !isSelected ? 0.5 : fillOpacity / 100,
         })
       },
       onEachFeature: (feature, layer) => {
@@ -124,13 +132,20 @@ export function useMap(containerRef: Ref<HTMLElement | null>, options: UseMapOpt
           const isSelected = layer.feature.properties?.id === selectedFeatureId.value
           const isHovered = layer.feature.properties?.id === hoveredFeatureId.value
           const hasSelection = selectedFeatureId.value !== null
+          const fillOpacity = layer.feature.properties?.fillOpacity ?? 39
+          const strokeOpacity = layer.feature.properties?.strokeOpacity ?? 100
+          const lineColor =
+            layer.feature.properties?.lineColor || layer.feature.properties?.color || '#3b82f6'
+          const fillColor =
+            layer.feature.properties?.fillColor || layer.feature.properties?.color || '#3b82f6'
 
           if (layer.setStyle) {
             layer.setStyle({
-              color: layer.feature.properties?.color || '#3b82f6',
+              color: lineColor,
+              fillColor: fillColor,
               weight: isSelected || isHovered ? 4 : 3,
-              opacity: 1,
-              fillOpacity: hasSelection && !isSelected ? 0.15 : isSelected || isHovered ? 0.5 : 0.4,
+              opacity: hasSelection && !isSelected ? 0.5 : strokeOpacity / 100,
+              fillOpacity: hasSelection && !isSelected ? 0.5 : fillOpacity / 100,
             })
           }
 
@@ -138,8 +153,8 @@ export function useMap(containerRef: Ref<HTMLElement | null>, options: UseMapOpt
           if (layer instanceof L.CircleMarker) {
             layer.setRadius(isSelected || isHovered ? 10 : 8)
             layer.setStyle({
-              opacity: 1,
-              fillOpacity: hasSelection && !isSelected ? 0.35 : isSelected || isHovered ? 1 : 0.8,
+              opacity: hasSelection && !isSelected ? 0.5 : strokeOpacity / 100,
+              fillOpacity: hasSelection && !isSelected ? 0.5 : fillOpacity / 100,
             })
           }
         }
@@ -213,8 +228,21 @@ export function useMap(containerRef: Ref<HTMLElement | null>, options: UseMapOpt
         },
       } as GeoJSONFeature
 
-      // Reload GeoJSON to reflect changes
-      loadGeoJSON(featureCollection.value)
+      // Update the layer directly without reloading (prevents zoom)
+      if (geoJsonLayer.value) {
+        geoJsonLayer.value.eachLayer((layer: any) => {
+          if (layer.feature?.properties?.id === featureId) {
+            layer.feature = featureCollection.value.features[index]
+            if (updates.geometry) {
+              // If geometry changed, need to reload
+              loadGeoJSON(featureCollection.value)
+            } else {
+              // Just refresh styles for property changes
+              refreshStyles()
+            }
+          }
+        })
+      }
     }
   }
 

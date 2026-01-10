@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { toast } from 'vue-sonner'
 import MapView from '@/features/map/MapView.vue'
 import DrawingToolbar from '@/features/geojson-editor/DrawingToolbar.vue'
@@ -20,10 +20,38 @@ const contextMenuFeature = ref<GeoJSONFeature | null>(null)
 const editMode = ref(false)
 const originalFeatureBeforeEdit = ref<GeoJSONFeature | null>(null)
 
+// SessionStorage key for saving GeoJSON
+const STORAGE_KEY = 'geojson-editor-data'
+
 // Get computed feature collection from map
 const featureCollection = computed<GeoJSONFeatureCollection>(() => {
   return mapRef.value?.featureCollection || { type: 'FeatureCollection', features: [] }
 })
+
+// Save to sessionStorage whenever feature collection changes
+watch(
+  featureCollection,
+  (newCollection) => {
+    if (newCollection.features.length > 0) {
+      sessionStorage.setItem(STORAGE_KEY, JSON.stringify(newCollection))
+    }
+  },
+  { deep: true },
+)
+
+// Load from sessionStorage on mount
+const loadFromSessionStorage = () => {
+  try {
+    const savedData = sessionStorage.getItem(STORAGE_KEY)
+    if (savedData) {
+      const data = JSON.parse(savedData) as GeoJSONFeatureCollection
+      mapRef.value?.loadGeoJSON(data)
+      toast.success('Loaded previous session')
+    }
+  } catch (error) {
+    console.error('Failed to load from sessionStorage:', error)
+  }
+}
 
 // Initialize draw composable once map is ready
 let drawComposable: ReturnType<typeof useDraw> | null = null
@@ -38,6 +66,9 @@ const onMapReady = () => {
       },
     })
     drawComposable.initDrawControls()
+
+    // Load saved data after map is ready
+    loadFromSessionStorage()
   }
 }
 
@@ -68,6 +99,7 @@ const handleClearAll = () => {
       new Promise((resolve) => {
         mapRef.value?.clearFeatures()
         drawComposable?.clearDrawnItems()
+        sessionStorage.removeItem(STORAGE_KEY)
         resolve(true)
       }),
     {
@@ -216,6 +248,8 @@ const handleRenameFeature = (featureId: string, newName: string) => {
 // Import handler
 const handleImport = (data: GeoJSONFeatureCollection) => {
   mapRef.value?.loadGeoJSON(data)
+  sessionStorage.setItem(STORAGE_KEY, JSON.stringify(data))
+  toast.success('GeoJSON imported successfully')
 }
 
 // Context menu handlers
@@ -342,6 +376,7 @@ useKeyboardShortcuts({
     <!-- Properties Editor -->
     <PropertiesEditor
       :feature="selectedFeature"
+      :key="selectedFeature?.properties.id"
       @update:open="
         (val) => {
           if (!val) {
