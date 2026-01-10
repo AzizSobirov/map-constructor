@@ -94,6 +94,13 @@ const handleCancelDraw = () => {
 }
 
 const handleClearAll = () => {
+  // If a feature is selected, delete only that feature
+  if (selectedFeature.value) {
+    handleDeleteFeature(selectedFeature.value.properties.id)
+    return
+  }
+
+  // Otherwise, clear all features
   toast.promise(
     () =>
       new Promise((resolve) => {
@@ -224,15 +231,8 @@ const handleUpdateFeature = (updatedFeature: GeoJSONFeature) => {
 }
 
 const handleUpdateAllFeatures = (properties: Partial<any>) => {
-  featureCollection.value.features.forEach((feature) => {
-    mapRef.value?.updateFeature(feature.properties.id, {
-      ...feature,
-      properties: {
-        ...feature.properties,
-        ...properties,
-      },
-    })
-  })
+  // Use batch update to avoid freezing
+  mapRef.value?.updateAllFeatures(properties)
 }
 
 const handleDeleteFeature = (featureId: string) => {

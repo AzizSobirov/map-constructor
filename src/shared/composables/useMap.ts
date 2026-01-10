@@ -72,7 +72,7 @@ export function useMap(containerRef: Ref<HTMLElement | null>, options: UseMapOpt
         const isSelected = feature?.properties?.id === selectedFeatureId.value
         const isHovered = feature?.properties?.id === hoveredFeatureId.value
         const hasSelection = selectedFeatureId.value !== null
-        const fillOpacity = feature?.properties?.fillOpacity ?? 39
+        const fillOpacity = feature?.properties?.fillOpacity ?? 35
         const strokeOpacity = feature?.properties?.strokeOpacity ?? 100
         const lineColor = feature?.properties?.lineColor || feature?.properties?.color || '#3b82f6'
         const fillColor = feature?.properties?.fillColor || feature?.properties?.color || '#3b82f6'
@@ -81,15 +81,15 @@ export function useMap(containerRef: Ref<HTMLElement | null>, options: UseMapOpt
           color: lineColor,
           fillColor: fillColor,
           weight: isSelected || isHovered ? 4 : 3,
-          opacity: hasSelection && !isSelected ? 0.5 : strokeOpacity / 100,
-          fillOpacity: hasSelection && !isSelected ? 0.5 : fillOpacity / 100,
+          opacity: hasSelection && !isSelected ? 0.25 : strokeOpacity / 100,
+          fillOpacity: hasSelection && !isSelected ? 0.25 : fillOpacity / 100,
         }
       },
       pointToLayer: (feature, latlng) => {
         const isSelected = feature?.properties?.id === selectedFeatureId.value
         const isHovered = feature?.properties?.id === hoveredFeatureId.value
         const hasSelection = selectedFeatureId.value !== null
-        const fillOpacity = feature?.properties?.fillOpacity ?? 39
+        const fillOpacity = feature?.properties?.fillOpacity ?? 35
         const strokeOpacity = feature?.properties?.strokeOpacity ?? 100
         const fillColor = feature?.properties?.fillColor || feature?.properties?.color || '#3b82f6'
 
@@ -98,8 +98,8 @@ export function useMap(containerRef: Ref<HTMLElement | null>, options: UseMapOpt
           fillColor: fillColor,
           color: '#fff',
           weight: 2,
-          opacity: hasSelection && !isSelected ? 0.5 : strokeOpacity / 100,
-          fillOpacity: hasSelection && !isSelected ? 0.5 : fillOpacity / 100,
+          opacity: hasSelection && !isSelected ? 0.25 : strokeOpacity / 100,
+          fillOpacity: hasSelection && !isSelected ? 0.25 : fillOpacity / 100,
         })
       },
       onEachFeature: (feature, layer) => {
@@ -141,7 +141,7 @@ export function useMap(containerRef: Ref<HTMLElement | null>, options: UseMapOpt
           const isSelected = layer.feature.properties?.id === selectedFeatureId.value
           const isHovered = layer.feature.properties?.id === hoveredFeatureId.value
           const hasSelection = selectedFeatureId.value !== null
-          const fillOpacity = layer.feature.properties?.fillOpacity ?? 39
+          const fillOpacity = layer.feature.properties?.fillOpacity ?? 35
           const strokeOpacity = layer.feature.properties?.strokeOpacity ?? 100
           const lineColor =
             layer.feature.properties?.lineColor || layer.feature.properties?.color || '#3b82f6'
@@ -153,8 +153,8 @@ export function useMap(containerRef: Ref<HTMLElement | null>, options: UseMapOpt
               color: lineColor,
               fillColor: fillColor,
               weight: isSelected || isHovered ? 4 : 3,
-              opacity: hasSelection && !isSelected ? 0.5 : strokeOpacity / 100,
-              fillOpacity: hasSelection && !isSelected ? 0.5 : fillOpacity / 100,
+              opacity: hasSelection && !isSelected ? 0.25 : strokeOpacity / 100,
+              fillOpacity: hasSelection && !isSelected ? 0.25 : fillOpacity / 100,
             })
           }
 
@@ -162,8 +162,8 @@ export function useMap(containerRef: Ref<HTMLElement | null>, options: UseMapOpt
           if (layer instanceof L.CircleMarker) {
             layer.setRadius(isSelected || isHovered ? 10 : 8)
             layer.setStyle({
-              opacity: hasSelection && !isSelected ? 0.5 : strokeOpacity / 100,
-              fillOpacity: hasSelection && !isSelected ? 0.5 : fillOpacity / 100,
+              opacity: hasSelection && !isSelected ? 0.25 : strokeOpacity / 100,
+              fillOpacity: hasSelection && !isSelected ? 0.25 : fillOpacity / 100,
             })
           }
         }
@@ -252,6 +252,38 @@ export function useMap(containerRef: Ref<HTMLElement | null>, options: UseMapOpt
           }
         })
       }
+    }
+  }
+
+  /**
+   * Update all features with the same properties (batch update)
+   */
+  const updateAllFeatures = (propertyUpdates: Record<string, any>) => {
+    // Update all features in memory first
+    featureCollection.value.features.forEach((feature, index) => {
+      featureCollection.value.features[index] = {
+        ...feature,
+        properties: {
+          ...feature.properties,
+          ...propertyUpdates,
+        },
+      } as GeoJSONFeature
+    })
+
+    // Update all layers and refresh styles only once
+    if (geoJsonLayer.value) {
+      geoJsonLayer.value.eachLayer((layer: any) => {
+        if (layer.feature?.properties?.id) {
+          const updatedFeature = featureCollection.value.features.find(
+            (f) => f.properties.id === layer.feature.properties.id,
+          )
+          if (updatedFeature) {
+            layer.feature = updatedFeature
+          }
+        }
+      })
+      // Single refresh after all updates
+      refreshStyles()
     }
   }
 
@@ -345,6 +377,7 @@ export function useMap(containerRef: Ref<HTMLElement | null>, options: UseMapOpt
     loadGeoJSON,
     addFeature,
     updateFeature,
+    updateAllFeatures,
     removeFeature,
     clearFeatures,
     changeBaseLayer,

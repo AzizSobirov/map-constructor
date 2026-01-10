@@ -251,7 +251,7 @@ const handleCopy = async () => {
       size="icon"
       class="h-8 w-8 text-destructive hover:bg-gray-100"
       @click="handleClearAll"
-      title="Clear All Features"
+      :title="props.selectedFeature ? 'Delete Selected Feature' : 'Clear All Features'"
     >
       <Trash2 class="h-4 w-4" />
     </Button>

@@ -57,6 +57,10 @@ export function createDefaultProperties(name: string = 'Untitled Feature'): Feat
     name,
     description: '',
     color: '#3b82f6',
+    fillColor: '#3b82f6',
+    lineColor: '#3b82f6',
+    fillOpacity: 35,
+    strokeOpacity: 100,
   }
 }
 
@@ -141,13 +145,67 @@ export async function parseGeoJSONFile(file: File): Promise<GeoJSONFeatureCollec
         }
 
         // Ensure all features have required properties
-        const features = data.features.map((feature: any) => ({
-          ...feature,
-          properties: {
-            ...createDefaultProperties(feature.properties?.name || 'Imported Feature'),
-            ...feature.properties,
-          },
-        }))
+        const features = data.features.map((feature: any) => {
+          const defaults = createDefaultProperties(feature.properties?.name || 'Imported Feature')
+          const existingProps = feature.properties || {}
+
+          // Map common GeoJSON styling properties to our format
+          const preservedColors: any = {}
+
+          // Check for our custom properties first
+          if (existingProps.fillColor) {
+            preservedColors.fillColor = existingProps.fillColor
+          } else if (existingProps.fill) {
+            // Standard GeoJSON 'fill' property
+            preservedColors.fillColor = existingProps.fill
+          } else if (existingProps['fill-color']) {
+            // Mapbox style property
+            preservedColors.fillColor = existingProps['fill-color']
+          }
+
+          if (existingProps.lineColor) {
+            preservedColors.lineColor = existingProps.lineColor
+          } else if (existingProps.stroke) {
+            // Standard GeoJSON 'stroke' property
+            preservedColors.lineColor = existingProps.stroke
+          } else if (existingProps['stroke-color']) {
+            // Mapbox style property
+            preservedColors.lineColor = existingProps['stroke-color']
+          }
+
+          // If only generic 'color' exists and no specific fill/line colors
+          if (existingProps.color && !preservedColors.fillColor && !preservedColors.lineColor) {
+            preservedColors.fillColor = existingProps.color
+            preservedColors.lineColor = existingProps.color
+          }
+
+          // Handle opacity properties
+          if (existingProps.fillOpacity !== undefined) {
+            preservedColors.fillOpacity = existingProps.fillOpacity
+          } else if (existingProps['fill-opacity'] !== undefined) {
+            // Convert 0-1 range to 0-100
+            preservedColors.fillOpacity = existingProps['fill-opacity'] * 100
+          }
+
+          if (existingProps.strokeOpacity !== undefined) {
+            preservedColors.strokeOpacity = existingProps.strokeOpacity
+          } else if (existingProps['stroke-opacity'] !== undefined) {
+            // Convert 0-1 range to 0-100
+            preservedColors.strokeOpacity = existingProps['stroke-opacity'] * 100
+          } else if (existingProps.opacity !== undefined && !preservedColors.strokeOpacity) {
+            // Fallback to generic opacity
+            preservedColors.strokeOpacity = existingProps.opacity * 100
+          }
+
+          return {
+            ...feature,
+            properties: {
+              ...defaults,
+              ...existingProps,
+              ...preservedColors,
+            },
+          }
+        })
 
         resolve({
           type: 'FeatureCollection',
