@@ -1,4 +1,4 @@
-import { ref, onMounted, onUnmounted, type Ref } from 'vue'
+import { ref, onMounted, onUnmounted, type Ref, shallowRef } from 'vue'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import type { MapConfig, GeoJSONFeatureCollection, GeoJSONFeature } from '@/shared/types'
@@ -12,7 +12,7 @@ export interface UseMapOptions {
 }
 
 export function useMap(containerRef: Ref<HTMLElement | null>, options: UseMapOptions = {}) {
-  const map = ref<L.Map | null>(null)
+  const map = shallowRef<L.Map | null>(null)
   const geoJsonLayer = ref<L.GeoJSON | null>(null)
   const featureCollection = ref<GeoJSONFeatureCollection>({
     type: 'FeatureCollection',
